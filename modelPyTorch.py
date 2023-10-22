@@ -15,7 +15,7 @@ import onnx
 import onnxruntime
 from sklearn.model_selection import train_test_split
 
-relative_path = 'arepasDataset/defectuosas/IMG_20230820_173228909.jpg'
+relative_path = 'arepasDatasetSinFondo/defectuosas/IMG_20231014_173728759.png'
 absolute_path = os.path.dirname(__file__)
 full_path = os.path.join(absolute_path, relative_path)
 img = read_image(full_path)
@@ -26,13 +26,15 @@ img.dtype
 img[:, 100:102, 100:102]
 
 train_data_augmentation_transform = transforms.Compose([
-    transforms.Resize((120, 160)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(),
+    transforms.Resize((240, 320)),
     transforms.Grayscale(num_output_channels=1),
     transforms.ToTensor(),
     transforms.Lambda(lambda x: x / 255.0)
 ])
 
-dataset_path = './arepasDataset'
+dataset_path = './arepasDatasetSinFondo'
 dataset = ImageFolder(
     dataset_path, transform=train_data_augmentation_transform)
 
@@ -51,21 +53,21 @@ train_data, val_data = train_test_split(
 batch_size = 64
 
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_data, batch_size=batch_size)
+val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
 
 # val_loader.dataset.targets.shape
-
+"""
 for batch in train_loader:
     images, labels = batch
 
-    print(images.shape)
-    print(labels.shape)
+    print("Image Shape", images.shape)
+    print("Image Tensor", images[0][:, 100:102, 100:102])
     plt.imshow(images[0].T, cmap='gray')
     break
 plt.show()
-
+"""
 
 def plot_loss(train_losses, test_losses):
     plt.figure(figsize=(12, 4))
@@ -92,23 +94,28 @@ def plot_accuracy(train_accuracies, test_accuracies):
 
 
 model = nn.Sequential(
-    nn.Conv2d(1, 64, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.MaxPool2d(kernel_size=2, stride=2),
-
-    nn.Conv2d(64, 128, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.MaxPool2d(kernel_size=2, stride=2),
-
-    # nn.Conv2d(128, 256, kernel_size=3, padding=1),  # Añadir una capa convolucional adicional
+    # nn.Conv2d(1, 32, kernel_size=3, padding=1),
     # nn.ReLU(),
     # nn.MaxPool2d(kernel_size=2, stride=2),
 
-    nn.Flatten(),
-    nn.Linear(128*30*40, 256),
+    # nn.Conv2d(32, 64, kernel_size=3, padding=1),
+    # nn.ReLU(),
+    # nn.MaxPool2d(kernel_size=2, stride=2),
+
+    nn.Conv2d(1, 128, kernel_size=3, padding=1),
+    nn.ReLU(),
+    nn.MaxPool2d(kernel_size=2, stride=2),
+
+    nn.Flatten(start_dim=1),
+    nn.Linear(128 * 30 * 40, 100),
     nn.ReLU(),
 
-    nn.Linear(256, 1),
+    nn.Linear(100, 50),
+    nn.ReLU(),
+
+    nn.Dropout(p=0.5),
+
+    nn.Linear(50, 1),
     nn.Sigmoid()
 
 )
@@ -193,7 +200,7 @@ test_loss, test_accuracy = test(model, test_loader)
 print(f'Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%')
 
 # importar modelo
-x = torch.rand(64, 1, 120, 160)
+x = torch.rand(64, 1, 240, 320)
 y = model.cpu()(x)
 
 torch.onnx.export(model,
