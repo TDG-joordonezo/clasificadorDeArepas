@@ -1,3 +1,4 @@
-/arepasDatasetSinFondo
+/arepasDataset*
 *.onnx
 .vscode
+/modelos
