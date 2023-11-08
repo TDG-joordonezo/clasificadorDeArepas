@@ -14,7 +14,7 @@ validation_data_generator = keras.preprocessing.image.ImageDataGenerator(
     validation_split=0.1,
 )
 path_data = "./arepasDatasetMejoradas"
-path_pruebas = path_data + "/pruebasNo"
+path_pruebas = path_data + "/pruebas"
 
 data_test = validation_data_generator.flow_from_directory(path_pruebas,
                                                           target_size=(
