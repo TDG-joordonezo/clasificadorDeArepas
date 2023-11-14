@@ -15,23 +15,23 @@ def to_grayscale_from_rgb(image):
 
 # imprimir primera imagen
 image = tf.io.read_file(
-    './arepasDatasetMejoradas\entrenamiento\defectuosas\IMG_20231104_002007554.jpg')
+    './DatasetNuevoCuadrado336pxNegro\entrenamiento\defectuosas\IMG_20231104_002007554.jpg')
 image = tf.image.decode_jpeg(image, channels=3)
 gray_image = to_grayscale_from_rgb(image)
 print(gray_image.shape)
 plt.imshow(gray_image, cmap='gray')
 plt.show()
 
-TAM_X_ORIG = 224
-TAM_Y_ORIG = 224
-X_TAM = int(TAM_X_ORIG * 1)
-Y_TAM = int(TAM_Y_ORIG * 1)
+TAM_X_ORIG = 336
+TAM_Y_ORIG = 336
+X_TAM = int(TAM_X_ORIG * 0.667)
+Y_TAM = int(TAM_Y_ORIG * 0.667)
 BATCH_SIZE = 32
 tf.random.set_seed(1)
 
 train_data_generator = keras.preprocessing.image.ImageDataGenerator(
     rescale=1. / 255,
-    validation_split=0.15,
+    validation_split=0.2,
     width_shift_range=0.01,
     height_shift_range=0.03,
     horizontal_flip=True,
@@ -42,10 +42,10 @@ train_data_generator = keras.preprocessing.image.ImageDataGenerator(
 
 validation_data_generator = keras.preprocessing.image.ImageDataGenerator(
     rescale=1. / 255,
-    validation_split=0.15,
+    validation_split=0.2,
 )
 
-path_data = "./arepasDatasetMejoradas"
+path_data = "./DatasetNuevoCuadrado336pxNegro"
 path_entrenamiento = path_data + "/entrenamiento"
 path_pruebas = path_data + "/pruebas"
 data_entrenamiento = train_data_generator.flow_from_directory(path_entrenamiento,
@@ -61,7 +61,7 @@ data_entrenamiento = train_data_generator.flow_from_directory(path_entrenamiento
 data_validacion = validation_data_generator.flow_from_directory(path_entrenamiento,
                                                                 target_size=(
                                                                     X_TAM, Y_TAM),
-                                                               # color_mode="grayscale",
+                                                                #color_mode="grayscale",
                                                                 batch_size=BATCH_SIZE,
                                                                 shuffle=True,
                                                                 class_mode='categorical',
@@ -71,7 +71,7 @@ data_validacion = validation_data_generator.flow_from_directory(path_entrenamien
 data_test = validation_data_generator.flow_from_directory(path_pruebas,
                                                           target_size=(
                                                               X_TAM, Y_TAM),
-                                                         # color_mode="grayscale",
+                                                          #color_mode="grayscale",
                                                           batch_size=BATCH_SIZE,
                                                           shuffle=False,
                                                           class_mode='categorical',
@@ -103,7 +103,7 @@ mobilenetv_2.trainable= False
 
 modelo = keras.Sequential([
     mobilenetv_2,
-    # keras.layers.Conv2D(32, (3, 3), input_shape=(X_TAM, Y_TAM, 1), activation="relu"),
+    # keras.layers.Conv2D(32, (3, 3), input_shape=(X_TAM, Y_TAM, 3), activation="relu"),
     # keras.layers.MaxPooling2D(2, 2),
 
     # keras.layers.Conv2D(64, (3, 3), activation="relu"),
@@ -113,7 +113,9 @@ modelo = keras.Sequential([
     # keras.layers.MaxPooling2D(2, 2),
 
     # keras.layers.Flatten(),
-    # keras.layers.Dense(250, activation="relu"),
+    keras.layers.Dense(250, activation="relu"),
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(100, activation="relu"),
     keras.layers.Dense(2, activation="softmax"),
 ])
 
@@ -123,7 +125,7 @@ modelo.compile(
     metrics=["accuracy"]
 )
 EPOCAS = 50
-modelName = 'TransferLearning+E'+str(EPOCAS)+'+S1'
+modelName = 'T224Negro+Transferlearning+D250+Dout0,5+D100+E'+str(EPOCAS)+'+S1'
 tensorboardCNN = keras.callbacks.TensorBoard(log_dir=('logs/'+modelName))
 entrenamiento = modelo.fit(
     data_entrenamiento,

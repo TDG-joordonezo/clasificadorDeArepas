@@ -2,3 +2,4 @@
 *.onnx
 .vscode
 /modelos
+/Dataset*
