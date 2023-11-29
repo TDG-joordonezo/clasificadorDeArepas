@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflowjs as tfjs
 import tensorflow_hub as hub
+import time
 
 print("Versión de TensorFlow:", tf.__version__)
 
@@ -97,12 +98,10 @@ plt.show()
 
 print(data_entrenamiento.class_indices)
 
-url = 'https://tfhub.dev/google/tf2-preview/mobilenet_v2/feature_vector/4'
-mobilenetv_2 = hub.KerasLayer(url, input_shape=(224,224,3))
-mobilenetv_2.trainable= False
+url = 'https://www.kaggle.com/models/google/mobilenet-v2/frameworks/TensorFlow2/variations/tf2-preview-feature-vector/versions/4'
 
 modelo = keras.Sequential([
-    mobilenetv_2,
+    hub.KerasLayer(url, input_shape=(224,224,3), trainable=False),
     # keras.layers.Conv2D(32, (3, 3), input_shape=(X_TAM, Y_TAM, 3), activation="relu"),
     # keras.layers.MaxPooling2D(2, 2),
 
@@ -114,7 +113,6 @@ modelo = keras.Sequential([
 
     # keras.layers.Flatten(),
     keras.layers.Dense(250, activation="relu"),
-    keras.layers.Dropout(0.5),
     keras.layers.Dense(100, activation="relu"),
     keras.layers.Dense(2, activation="softmax"),
 ])
@@ -124,9 +122,15 @@ modelo.compile(
     loss="categorical_crossentropy",
     metrics=["accuracy"]
 )
+print(modelo.summary())
 EPOCAS = 50
-modelName = 'T224Negro+Transferlearning+D250+Dout0,5+D100+E'+str(EPOCAS)+'+S1'
+modelName = 'kaggle-mobilenet-v2-T224Negro+Transferlearning+D250+D100+E'+str(EPOCAS)+'+S1+DATE='+str(time.time())
+bestModel = 'T224Negro+Transferlearning+D250+E50+S1'
 tensorboardCNN = keras.callbacks.TensorBoard(log_dir=('logs/'+modelName))
+model_checkpoint = keras.callbacks.ModelCheckpoint(f'./modelos/{bestModel}/keras/modelo.h5', 
+                                   save_best_only=True,
+                                   monitor='val_accuracy',
+                                   mode='max')
 entrenamiento = modelo.fit(
     data_entrenamiento,
     batch_size=BATCH_SIZE,
@@ -134,7 +138,7 @@ entrenamiento = modelo.fit(
     epochs=EPOCAS,
     validation_data=data_validacion,
     validation_steps=int(np.ceil(data_validacion.n / float(BATCH_SIZE))),
-    callbacks=[tensorboardCNN]
+    callbacks=[tensorboardCNN, model_checkpoint]
 )
 print("Guardando model .h5")
 modelo.save(('./modelos/'+modelName+'/keras/modelo.h5'))
