@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import tensorflow_hub as hub
 import tensorflowjs as tfjs
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import f1_score
 import seaborn as sns
 
 TAM_X_ORIG = 336
@@ -74,6 +76,13 @@ def plot_confusion_matrix(conf_mat, class_names):
 
 class_names = ["Defectuosa", "Perfecta"]
 plot_confusion_matrix(conf_mat, class_names)
+
+f1 = f1_score(all_labels, all_predictions, average='weighted')
+print("F1-Score:", f1)
+
+class_report = classification_report(all_labels, all_predictions, target_names=class_names)
+print("Resumen de clasificación:")
+print(class_report)
 
 def plot_images(images, labels, predicted_labels, class_names, items_per_page=9, margin=0.1):
     num_items = len(images)
